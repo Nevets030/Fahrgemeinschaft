@@ -210,10 +210,9 @@ function renderGroupPicker(){
 
 // Sucht Fahrten, bei denen exakt diese Personen-Kombination unterwegs war
 function matchingTripsForGroup(groupArr){
-  const g = [...groupArr].sort().join('|');
   return trips.filter(t => {
-    const participants = [t.driver, ...(t.passengers || [])].sort().join('|');
-    return participants === g;
+    const participants = new Set([t.driver, ...(t.passengers || [])]);
+    return groupArr.every(p => participants.has(p));
   });
 }
 
