@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fahrgemeinschaft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1F2733;
+    --paper:#F7F5F0;
+    --paper-dim:#EDE9DF;
+    --amber:#E8B94A;
+    --teal:#2F8F84;
+    --muted:#6B7280;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:'Space Grotesk', sans-serif; margin:0; }
+
+  .wrap{ max-width:640px; margin:0 auto; padding:28px 20px 80px; }
+
+  header{ margin-bottom:24px; }
+  .eyebrow{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--teal); font-weight:600; margin-bottom:6px;
+  }
+  header h1{ font-size:28px; font-weight:700; }
+  header p{ color:var(--muted); margin-top:6px; font-size:14px; }
+
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:22px;
+    box-shadow:0 1px 2px rgba(31,39,51,.06);
+    border:1px solid rgba(31,39,51,.06);
+  }
+  .card h2{ font-size:16px; margin-bottom:14px; }
+  .card .hint{ font-size:12px; color:var(--muted); margin-top:-8px; margin-bottom:16px; }
+
+  label.field-label{
+    display:block; font-size:12px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;
+  }
+  .row{ margin-bottom:18px; }
+
+  input[type="date"]{
+    width:100%; padding:10px 12px; border-radius:10px;
+    border:1px solid #DCD8CC; font-family:'Inter'; font-size:14px;
+    background:var(--paper-dim);
+  }
+
+  .choice-group{ display:flex; gap:8px; flex-wrap:wrap; }
+  .choice{
+    padding:9px 16px; border-radius:999px; border:1.5px solid #DCD8CC;
+    background:var(--paper-dim); cursor:pointer; font-size:14px; font-weight:500;
+    user-select:none; transition:all .15s ease;
+  }
+  .choice.selected{
+    background:var(--ink); border-color:var(--ink); color:var(--paper);
+  }
+  .choice.driver-pick.selected{
+    background:var(--amber); border-color:var(--amber); color:var(--ink);
+  }
+  .choice.disabled{ opacity:.35; cursor:not-allowed; }
+
+  /* --- Vorschlag-Box (Signature-Element) --- */
+  .suggestion{
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:16px;
+    padding:20px 22px;
+    margin-bottom:22px;
+    min-height:20px;
+  }
+  .suggestion .label{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--amber); font-weight:600; margin-bottom:10px;
+  }
+  .suggestion .main{
+    font-family:'Space Grotesk'; font-size:22px; font-weight:700;
+  }
+  .suggestion .main .name{ color:var(--amber); }
+  .suggestion .sub{
+    font-size:13px; color:rgba(247,245,240,.7); margin-top:6px; line-height:1.5;
+  }
+  .suggestion .breakdown{
+    display:flex; gap:16px; margin-top:14px; flex-wrap:wrap;
+  }
+  .suggestion .breakdown .item{
+    font-size:13px; color:rgba(247,245,240,.85);
+  }
+  .suggestion .breakdown .item b{ color:var(--paper); }
+
+  button.submit{
+    width:100%; padding:13px; border:none; border-radius:10px;
+    background:var(--teal); color:white; font-weight:600; font-size:15px;
+    cursor:pointer; font-family:'Inter'; margin-top:6px;
+  }
+  button.submit:hover{ background:#267871; }
+  button.submit:disabled{ background:#B7B2A4; cursor:not-allowed; }
+
+  .stats-grid{ display:flex; gap:10px; }
+  .stat{
+    flex:1; background:var(--paper-dim); border-radius:12px; padding:14px;
+    text-align:center;
+  }
+  .stat .num{ font-family:'Space Grotesk'; font-size:22px; font-weight:700; }
+  .stat .name{ font-size:12px; color:var(--muted); margin-top:2px; }
+
+  .history-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 0; border-bottom:1px solid #EDE9DF;
+    font-size:14px;
+  }
+  .history-item:last-child{ border-bottom:none; }
+  .history-left .driver{ font-weight:600; }
+  .history-left .passengers{ color:var(--muted); font-size:13px; }
+  .history-date{ color:var(--muted); font-size:12px; white-space:nowrap; margin-left:12px; }
+  .del-btn{
+    background:none; border:none; color:#C0392B; cursor:pointer; font-size:12px;
+    margin-left:10px; opacity:.6;
+  }
+  .del-btn:hover{ opacity:1; }
+  .empty{ color:var(--muted); font-size:14px; text-align:center; padding:20px 0; }
+  .loading{ color:var(--muted); font-size:14px; text-align:center; padding:20px 0; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Fahrgemeinschaft</div>
+    <h1>Paul · Martin · Steven</h1>
+    <p>Wählt, wer heute mitfährt – die App sagt euch, wer bei dieser Kombi dran ist.</p>
+  </header>
+
+  <div class="card">
+    <h2>Wer fährt heute mit?</h2>
+    <div class="hint">Nur die Personen anklicken, die diesmal wirklich im Auto sitzen.</div>
+    <div class="choice-group" id="groupPicker"></div>
+  </div>
+
+  <div class="suggestion" id="suggestionBox"></div>
+
+  <div class="card" id="driverCard" style="display:none;">
+    <h2>Wer ist tatsächlich gefahren?</h2>
+    <div class="choice-group" id="driverGroup"></div>
+    <div class="row" style="margin-top:18px;">
+      <label class="field-label">Datum</label>
+      <input type="date" id="dateInput" />
+    </div>
+    <button class="submit" id="submitBtn">Fahrt eintragen</button>
+  </div>
+
+  <div class="card">
+    <h2>Gesamtübersicht</h2>
+    <div class="hint">Wie oft insgesamt gefahren wurde, unabhängig von der Kombination.</div>
+    <div class="stats-grid" id="statsGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Verlauf</h2>
+    <div id="historyList"><div class="loading">Lade …</div></div>
+  </div>
+
+  <footer>Läuft über Netlify Functions &amp; Blobs</footer>
+</div>
+
+<script>
+const PEOPLE = ["Paul", "Martin", "Steven"];
+const API = "/.netlify/functions/trips";
+
+let trips = [];
+let selectedGroup = new Set();
+let selectedDriver = null;
+
+const dateInput = document.getElementById('dateInput');
+dateInput.value = new Date().toISOString().slice(0,10);
+
+function renderGroupPicker(){
+  const el = document.getElementById('groupPicker');
+  el.innerHTML = '';
+  PEOPLE.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'choice' + (selectedGroup.has(p) ? ' selected' : '');
+    div.textContent = p;
+    div.onclick = () => {
+      if (selectedGroup.has(p)) selectedGroup.delete(p);
+      else selectedGroup.add(p);
+      if (selectedDriver && !selectedGroup.has(selectedDriver)) selectedDriver = null;
+      renderGroupPicker();
+      renderSuggestion();
+      renderDriverGroup();
+    };
+    el.appendChild(div);
+  });
+}
+
+// Sucht Fahrten, bei denen exakt diese Personen-Kombination unterwegs war
+function matchingTripsForGroup(groupArr){
+  const g = [...groupArr].sort().join('|');
+  return trips.filter(t => {
+    const participants = [t.driver, ...(t.passengers || [])].sort().join('|');
+    return participants === g;
+  });
+}
+
+function renderSuggestion(){
+  const box = document.getElementById('suggestionBox');
+  const groupArr = [...selectedGroup];
+
+  if (groupArr.length === 0){
+    box.innerHTML = '<div class="label">Wer ist dran?</div><div class="sub">Wählt oben aus, wer heute mitfährt.</div>';
+    return;
+  }
+  if (groupArr.length === 1){
+    box.innerHTML = '<div class="label">Wer ist dran?</div>' +
+      '<div class="main">' + groupArr[0] + ' fährt allein.</div>';
+    return;
+  }
+
+  const matches = matchingTripsForGroup(groupArr);
+  const groupLabel = groupArr.join(' & ');
+
+  if (matches.length === 0){
+    box.innerHTML = '<div class="label">Wer ist dran?</div>' +
+      '<div class="main">Noch keine Historie</div>' +
+      '<div class="sub">' + groupLabel + ' sind noch nie zusammen gefahren – ihr könnt frei entscheiden, wer diesmal fährt.</div>';
+    return;
+  }
+
+  const counts = {}; const lastDate = {};
+  groupArr.forEach(p => { counts[p] = 0; lastDate[p] = null; });
+  matches.forEach(t => {
+    counts[t.driver]++;
+    if (!lastDate[t.driver] || t.date > lastDate[t.driver]) lastDate[t.driver] = t.date;
+  });
+  const sorted = [...groupArr].sort((a,b) => {
+    if (counts[a] !== counts[b]) return counts[a] - counts[b];
+    const da = lastDate[a] || '0000-00-00';
+    const db = lastDate[b] || '0000-00-00';
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
+  const suggested = sorted[0];
+
+  const breakdown = groupArr.map(p =>
+    '<div class="item"><b>' + counts[p] + 'x</b> ' + p + '</div>'
+  ).join('');
+
+  box.innerHTML =
+    '<div class="label">Wer ist dran?</div>' +
+    '<div class="main">' + '<span class="name">' + suggested + '</span> ist dran</div>' +
+    '<div class="sub">Basierend auf ' + matches.length + ' gemeinsamen Fahrt' + (matches.length === 1 ? '' : 'en') + ' von ' + groupLabel + '.</div>' +
+    '<div class="breakdown">' + breakdown + '</div>';
+
+  if (!selectedDriver) {
+    selectedDriver = suggested;
+    renderDriverGroup();
+  }
+}
+
+function renderDriverGroup(){
+  const card = document.getElementById('driverCard');
+  const el = document.getElementById('driverGroup');
+  const groupArr = [...selectedGroup];
+
+  if (groupArr.length < 2){
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  el.innerHTML = '';
+  groupArr.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'choice driver-pick' + (selectedDriver === p ? ' selected' : '');
+    div.textContent = p;
+    div.onclick = () => {
+      selectedDriver = p;
+      renderDriverGroup();
+    };
+    el.appendChild(div);
+  });
+}
+
+function computeOverallStats(){
+  const counts = {};
+  PEOPLE.forEach(p => { counts[p] = 0; });
+  trips.forEach(t => { if (counts[t.driver] !== undefined) counts[t.driver]++; });
+  return counts;
+}
+
+function renderStats(){
+  const counts = computeOverallStats();
+  const el = document.getElementById('statsGrid');
+  el.innerHTML = '';
+  PEOPLE.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = '<div class="num">' + counts[p] + '</div><div class="name">' + p + ' gefahren</div>';
+    el.appendChild(div);
+  });
+}
+
+function formatDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function renderHistory(){
+  const el = document.getElementById('historyList');
+  if (trips.length === 0){
+    el.innerHTML = '<div class="empty">Noch keine Fahrten eingetragen.</div>';
+    return;
+  }
+  const sorted = [...trips].sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  el.innerHTML = '';
+  sorted.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    const passengersText = t.passengers && t.passengers.length ? 'mit ' + t.passengers.join(', ') : 'allein';
+    div.innerHTML =
+      '<div class="history-left"><div class="driver">' + t.driver + ' gefahren</div>' +
+      '<div class="passengers">' + passengersText + '</div></div>' +
+      '<div style="display:flex;align-items:center;">' +
+      '<div class="history-date">' + formatDate(t.date) + '</div>' +
+      '<button class="del-btn" data-id="' + t.id + '">Löschen</button></div>';
+    el.appendChild(div);
+  });
+  el.querySelectorAll('.del-btn').forEach(btn => {
+    btn.onclick = () => deleteTrip(btn.dataset.id);
+  });
+}
+
+function renderAll(){
+  renderSuggestion();
+  renderDriverGroup();
+  renderStats();
+  renderHistory();
+}
+
+async function loadTrips(){
+  try{
+    const res = await fetch(API);
+    trips = await res.json();
+  } catch(e){
+    trips = [];
+    document.getElementById('historyList').innerHTML = '<div class="empty">Verlauf konnte nicht geladen werden.</div>';
+  }
+  renderAll();
+}
+
+async function addTrip(){
+  const groupArr = [...selectedGroup];
+  if (groupArr.length < 2 || !selectedDriver){
+    alert('Bitte Gruppe und Fahrer auswählen.');
+    return;
+  }
+  const passengers = groupArr.filter(p => p !== selectedDriver);
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Speichere …';
+  try{
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: dateInput.value,
+        driver: selectedDriver,
+        passengers
+      })
+    });
+    trips = await res.json();
+    selectedGroup = new Set();
+    selectedDriver = null;
+    renderGroupPicker();
+    renderAll();
+  } catch(e){
+    alert('Fahrt konnte nicht gespeichert werden.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Fahrt eintragen';
+}
+
+async function deleteTrip(id){
+  try{
+    const res = await fetch(API + '?id=' + encodeURIComponent(id), { method: 'DELETE' });
+    trips = await res.json();
+    renderAll();
+  } catch(e){
+    alert('Löschen fehlgeschlagen.');
+  }
+}
+
+document.getElementById('submitBtn').onclick = addTrip;
+
+renderGroupPicker();
+renderSuggestion();
+loadTrips();
+</script>
+</body>
+</html>
