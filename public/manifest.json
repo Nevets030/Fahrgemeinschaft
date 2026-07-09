@@ -1,0 +1,8 @@
+{
+  "name": "Fahrgemeinschaft",
+  "short_name": "Fahrgemeinschaft",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F5F0",
+  "theme_color": "#1F2733"
+}
