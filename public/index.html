@@ -242,16 +242,23 @@ function renderSuggestion(){
     return;
   }
 
-  const counts = {}; const lastDate = {};
-  groupArr.forEach(p => { counts[p] = 0; lastDate[p] = null; });
-  matches.forEach(t => {
-    counts[t.driver]++;
-    if (!lastDate[t.driver] || t.date > lastDate[t.driver]) lastDate[t.driver] = t.date;
-  });
+  const counts = {};
+  groupArr.forEach(p => { counts[p] = 0; });
+  matches.forEach(t => { counts[t.driver]++; });
+
+  // Bei Gleichstand zählt, wer insgesamt am längsten nicht mehr gefahren ist
+  function lastDrivenOverall(person){
+    let last = null;
+    trips.forEach(t => {
+      if (t.driver === person && (!last || t.date > last)) last = t.date;
+    });
+    return last;
+  }
+
   const sorted = [...groupArr].sort((a,b) => {
     if (counts[a] !== counts[b]) return counts[a] - counts[b];
-    const da = lastDate[a] || '0000-00-00';
-    const db = lastDate[b] || '0000-00-00';
+    const da = lastDrivenOverall(a) || '0000-00-00';
+    const db = lastDrivenOverall(b) || '0000-00-00';
     return da < db ? -1 : da > db ? 1 : 0;
   });
   const suggested = sorted[0];
