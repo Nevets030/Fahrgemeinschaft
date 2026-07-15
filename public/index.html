@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1F2733">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Fahrgemeinschaft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1F2733">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <style>
   :root{
     --ink:#1F2733;
@@ -75,7 +77,6 @@
   }
   .choice.disabled{ opacity:.35; cursor:not-allowed; }
 
-  /* --- Vorschlag-Box (Signature-Element) --- */
   .suggestion{
     background:var(--ink);
     color:var(--paper);
@@ -210,14 +211,6 @@ function renderGroupPicker(){
   });
 }
 
-// Sucht Fahrten, bei denen exakt diese Personen-Kombination unterwegs war
-function matchingTripsForGroup(groupArr){
-  return trips.filter(t => {
-    const participants = new Set([t.driver, ...(t.passengers || [])]);
-    return groupArr.every(p => participants.has(p));
-  });
-}
-
 function renderSuggestion(){
   const box = document.getElementById('suggestionBox');
   const groupArr = [...selectedGroup];
@@ -232,45 +225,31 @@ function renderSuggestion(){
     return;
   }
 
-  const matches = matchingTripsForGroup(groupArr);
-  const groupLabel = groupArr.join(' & ');
-
-  if (matches.length === 0){
-    box.innerHTML = '<div class="label">Wer ist dran?</div>' +
-      '<div class="main">Noch keine Historie</div>' +
-      '<div class="sub">' + groupLabel + ' sind noch nie zusammen gefahren – ihr könnt frei entscheiden, wer diesmal fährt.</div>';
-    return;
-  }
-
-  const counts = {};
-  groupArr.forEach(p => { counts[p] = 0; });
-  matches.forEach(t => { counts[t.driver]++; });
-
-  // Bei Gleichstand zählt, wer insgesamt am längsten nicht mehr gefahren ist
-  function lastDrivenOverall(person){
-    let last = null;
-    trips.forEach(t => {
-      if (t.driver === person && (!last || t.date > last)) last = t.date;
-    });
-    return last;
-  }
+  const counts = {}; const lastDate = {};
+  groupArr.forEach(p => { counts[p] = 0; lastDate[p] = null; });
+  trips.forEach(t => {
+    if (counts[t.driver] !== undefined){
+      counts[t.driver]++;
+      if (!lastDate[t.driver] || t.date > lastDate[t.driver]) lastDate[t.driver] = t.date;
+    }
+  });
 
   const sorted = [...groupArr].sort((a,b) => {
     if (counts[a] !== counts[b]) return counts[a] - counts[b];
-    const da = lastDrivenOverall(a) || '0000-00-00';
-    const db = lastDrivenOverall(b) || '0000-00-00';
+    const da = lastDate[a] || '0000-00-00';
+    const db = lastDate[b] || '0000-00-00';
     return da < db ? -1 : da > db ? 1 : 0;
   });
   const suggested = sorted[0];
 
   const breakdown = groupArr.map(p =>
-    '<div class="item"><b>' + counts[p] + 'x</b> ' + p + '</div>'
+    '<div class="item"><b>' + counts[p] + 'x</b> ' + p + ' insgesamt gefahren</div>'
   ).join('');
 
   box.innerHTML =
     '<div class="label">Wer ist dran?</div>' +
     '<div class="main">' + '<span class="name">' + suggested + '</span> ist dran</div>' +
-    '<div class="sub">Basierend auf ' + matches.length + ' gemeinsamen Fahrt' + (matches.length === 1 ? '' : 'en') + ' von ' + groupLabel + '.</div>' +
+    '<div class="sub">Basierend auf der gesamten bisherigen Fahrverteilung von ' + groupArr.join(' & ') + '.</div>' +
     '<div class="breakdown">' + breakdown + '</div>';
 
   if (!selectedDriver) {
